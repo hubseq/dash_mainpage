@@ -13,6 +13,11 @@ import dashboard_server_utils as dsu
 
 SERVER_PORT = '5000'
 
+PIPELINE_DASHBOARD_URL = 'http://data.hubseq.com:8080'
+DATA_DASHBOARD_URL_CHIPSEQ = 'http://data.hubseq.com:8081'
+DATA_DASHBOARD_URL_DNASEQ = 'http://data.hubseq.com:8082'
+GENOME_BROWSER_URL = 'http://data.hubseq.com:8083'
+DATA_DASHBOARD_URL = DATA_DASHBOARD_URL_CHIPSEQ
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 # server = app.server
@@ -41,9 +46,9 @@ runs_dropdown = [
 ]
 
 app.layout = html.Div(
-    [html.Div(children=[html.Button('Run New Pipeline', id='run_pipeline', style={'height':'35px', 'margin': '10px', 'color': 'green'}),
-                        html.Button('Open Data Dashboard', id='run_dashboard', style={'height':'35px'}),
-                        html.Button('View Genome Browser', id='run_genome_browser', style={'height':'35px', 'margin': '10px', 'color': 'blue'})],
+    [html.Div(children=[html.Button('Run New Pipeline', id='run_pipeline', href=PIPELINE_DASHBOARD_URL, style={'height':'35px', 'margin': '10px', 'color': 'green'}),
+                        html.Button(html.A('Open Data Dashboard', href=DATA_DASHBOARD_URL, target="_blank", id='dashboard_link'), id='run_dashboard', style={'height':'35px'}),
+                        html.Button('View Genome Browser', id='run_genome_browser', href=GENOME_BROWSER_URL, style={'height':'35px', 'margin': '10px', 'color': 'blue'})],
               style={'width': '100%'}),
      html.H1("HubSeq Run Browser"),
      html.Div(children=['Pipeline: ', html.Div(pipelines_dropdown)], style={'display': 'inline-block', 'width': '100%'}),
@@ -106,11 +111,26 @@ def makeDir( newdir ):
         os.makedirs(newdir)
     return newdir
 
+
+@app.callback(
+    Output('dashboard_link', 'href'),
+    Input('pipeline_dropdown', 'value'))
+def choose_dashboard_link( p ):
+    if p != [] and p != None:    
+        print('SELECTED PIPELINE: '+str(p))
+        if p == 'chipseq':
+            DATA_DASHBOARD_URL = DATA_DASHBOARD_URL_CHIPSEQ
+        else:
+            DATA_DASHBOARD_URL = DATA_DASHBOARD_URL_DNASEQ
+        return DATA_DASHBOARD_URL
+    else:
+        return DATA_DASHBOARD_URL
+    
 @app.callback(
     Output('runs_dropdown', 'options'),
     Input('pipeline_dropdown', 'value'))
 def choose_run(selected_pipeline):
-    global teamid, userid    
+    global teamid, userid
     if selected_pipeline != [] and selected_pipeline != None:
         return dsu.list2optionslist(getRunIds('/s3/',teamid, userid, selected_pipeline))
     else:
